@@ -61,11 +61,16 @@ class Dreambook(QtGui.QMainWindow):
         self.config_store()
         
         self.current_id = -1
+        self.current_dream_changed = False
 
     def add_events(self):
         self.connect(self.toolbar_new, QtCore.SIGNAL('triggered()'), self.new)
         self.connect(self.toolbar_exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
         self.connect(self.save_button, QtCore.SIGNAL('clicked()'), self.save_dream)
+        
+        self.connect(self.text_title, QtCore.SIGNAL("textEdited(QString)"), self.text_changed)
+        self.connect(self.text_content, QtCore.SIGNAL("textEdited(QString)"), self.text_changed)
+        self.connect(self.text_date, QtCore.SIGNAL("textEdited(QString)"), self.text_changed)
 
     def build_actions(self):
         self.toolbar_new = QtGui.QAction(QtGui.QIcon('resources/add.png'), "&New", self)
@@ -153,11 +158,27 @@ class Dreambook(QtGui.QMainWindow):
         self.dreams_list.setModel(model)  
         
     def show_dream(self, index):
+        if self.current_dream_changed:
+            if self.confirm_save():
+                self.save_dream()
+        
         self.current_id = index
+        self.current_dream_changed = False
         
         self.text_title.setText(self.dreams.dreams[index]['title'])
         self.text_content.setText(self.dreams.dreams[index]['content'])
         self.text_date.setText(self.dreams.dreams[index]['date'])
+        
+    def confirm_save(self):
+        reply = QtGui.QMessageBox.question(
+            self, 
+            'Save?',
+            'You changed your dream. Do you want to save?', 
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, 
+            QtGui.QMessageBox.Yes
+        )
+        
+        return reply == QtGui.QMessageBox.Yes
         
     # Events
     
@@ -182,6 +203,9 @@ class Dreambook(QtGui.QMainWindow):
         
     def list_clicked(self, index):
         self.show_dream(index.row())
+    
+    def text_changed(self, text):
+        self.current_dream_changed = True
         
 app = QtGui.QApplication(sys.argv)
 main = Dreambook()
