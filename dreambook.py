@@ -1,7 +1,37 @@
 #!/usr/bin/python
 
 import sys
+import pickle
 from PyQt4 import QtGui, QtCore
+
+class Dreams():
+    
+    DATA_FILE = 'dreams.db'
+    
+    def __init__(self):
+        if not self.load():
+            self.create()
+            self.save()
+            
+    def load(self):
+        try:
+            file = open(self.DATA_FILE, 'rb')
+        except IOError:
+            return False
+        
+        self.dreams = pickle.load(file)
+        file.close()
+        
+        if self.dreams == None: return False
+        return True
+        
+    def create(self):
+        self.dreams = []        
+        
+    def save(self):
+        file = open(self.DATA_FILE, 'wb')
+        pickle.dump(self.dreams, file)
+        file.close()
 
 class Dreambook(QtGui.QMainWindow):
     
@@ -14,9 +44,6 @@ class Dreambook(QtGui.QMainWindow):
 
         # Data
         self.config_store()
-
-        # Load the Dreams list
-        self.load_dreams()
 
     def build_actions(self):
         self.toolbar_exit = QtGui.QAction(QtGui.QIcon('resources/exit.png'), "&Exit", self)
@@ -87,11 +114,7 @@ class Dreambook(QtGui.QMainWindow):
         self.dreams_list.setModel(self.dreams_list_model)
 
     def config_store(self):
-        self.dreams = []
-        
-    def load_dreams(self):
-        pass
-        
+        self.dreams = Dreams()
 
 app = QtGui.QApplication(sys.argv)
 main = Dreambook()
