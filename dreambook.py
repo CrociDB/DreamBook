@@ -223,6 +223,7 @@ class Dreambook(QtGui.QMainWindow):
             self.current_id = self.dreams.add(self.text_title.text(), self.text_content.toPlainText(), self.text_date.text())
         
         self.update_list()
+        self.current_dream_changed = False
         
     def list_clicked(self, index):
         self.show_dream(index.row())
