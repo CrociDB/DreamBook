@@ -43,6 +43,10 @@ class Dreams():
         self.dreams[id] = { 'id': id, 'title': title, 'content': content, 'date': date}
         self.save()
         
+    def delete(self, id):
+        self.dreams.pop(id)
+        self.save()
+        
     def check_id(self, id):
         return True in map(lambda x: x['id'] == id, self.dreams)
 
@@ -65,6 +69,7 @@ class Dreambook(QtGui.QMainWindow):
 
     def add_events(self):
         self.connect(self.toolbar_new, QtCore.SIGNAL('triggered()'), self.new)
+        self.connect(self.toolbar_delete, QtCore.SIGNAL('triggered()'), self.delete)
         self.connect(self.toolbar_exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
         self.connect(self.save_button, QtCore.SIGNAL('clicked()'), self.save_dream)
         
@@ -75,6 +80,9 @@ class Dreambook(QtGui.QMainWindow):
     def build_actions(self):
         self.toolbar_new = QtGui.QAction(QtGui.QIcon('resources/add.png'), "&New", self)
         self.toolbar_new.setShortcut('Ctrl+N')
+        
+        self.toolbar_delete = QtGui.QAction(QtGui.QIcon('resources/delete.png'), "&Remove", self)
+        self.toolbar_delete.setShortcut('Ctrl+D')
         
         self.toolbar_exit = QtGui.QAction(QtGui.QIcon('resources/exit.png'), "&Exit", self)
         self.toolbar_exit.setShortcut('Ctrl+Q')
@@ -98,6 +106,8 @@ class Dreambook(QtGui.QMainWindow):
         self.toolbar = self.addToolBar("Toolbar");
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.toolbar_new)
+        self.toolbar.addAction(self.toolbar_delete)
+        self.toolbar.addSeparator()
         self.toolbar.addAction(self.toolbar_exit)
 
         # Status Bar
@@ -192,6 +202,19 @@ class Dreambook(QtGui.QMainWindow):
         self.update_list()
         
         self.text_title.setFocus(True)
+        
+    def delete(self):
+        reply = QtGui.QMessageBox.question(
+            self, 
+            'Remove?',
+            'Do you really want to remove that?', 
+            QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, 
+            QtGui.QMessageBox.No
+        )
+        
+        if reply == QtGui.QMessageBox.Yes:
+            self.dreams.delete(self.current_id)
+            self.new()            
     
     def save_dream(self):
         if self.current_id > -1 and self.dreams.check_id(self.current_id):
