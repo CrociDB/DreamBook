@@ -34,7 +34,17 @@ class Dreams():
         file.close()
         
     def add(self, title, content, date):
-        self.dreams.append({ 'id': len(self.dreams),'title': title, 'content': content, 'date': date})
+        id = len(self.dreams)
+        self.dreams.append({ 'id': id,'title': title, 'content': content, 'date': date})
+        self.save()
+        return id
+        
+    def replace(self, id, title, content, date):
+        self.dreams[id] = { 'id': id, 'title': title, 'content': content, 'date': date}
+        self.save()
+        
+    def check_id(self, id):
+        return True in map(lambda x: x['id'] == id, self.dreams)
 
 class Dreambook(QtGui.QMainWindow):
     
@@ -45,13 +55,20 @@ class Dreambook(QtGui.QMainWindow):
         self.build_bars()
         self.build_gui()
 
+        self.add_events()
+
         # Data
         self.config_store()
+        
+        self.current_id = -1
+
+    def add_events(self):
+        self.connect(self.toolbar_exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+        self.connect(self.save_button, QtCore.SIGNAL('clicked()'), self.save_dream)
 
     def build_actions(self):
         self.toolbar_exit = QtGui.QAction(QtGui.QIcon('resources/exit.png'), "&Exit", self)
         self.toolbar_exit.setShortcut('Ctrl+Q')
-        self.connect(self.toolbar_exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
 
     def build_bars(self):
         self.resize(750, 500)
@@ -94,15 +111,19 @@ class Dreambook(QtGui.QMainWindow):
 
         # Dreams details
         left_grid.addWidget(QtGui.QLabel("Title"), 0, 0)
-        left_grid.addWidget(QtGui.QLineEdit(), 1, 0)
+        self.text_title = QtGui.QLineEdit()
+        left_grid.addWidget(self.text_title, 1, 0)
 
         left_grid.addWidget(QtGui.QLabel("Dream"), 2, 0)
-        left_grid.addWidget(QtGui.QTextEdit(), 3, 0)
+        self.text_content = QtGui.QTextEdit()
+        left_grid.addWidget(self.text_content, 3, 0)
 
         left_grid.addWidget(QtGui.QLabel("Date"), 4, 0)
-        left_grid.addWidget(QtGui.QLineEdit(), 5, 0)
+        self.text_date = QtGui.QLineEdit()
+        left_grid.addWidget(self.text_date, 5, 0)
 
-        left_grid.addWidget(QtGui.QPushButton("Save"), 6, 0)
+        self.save_button = QtGui.QPushButton("Save")
+        left_grid.addWidget(self.save_button, 6, 0)
 
         grid.addWidget(left, 0, 1)
         self.setCentralWidget(widget)
@@ -123,7 +144,15 @@ class Dreambook(QtGui.QMainWindow):
             item = QtGui.QStandardItem(dream['title'])
             model.appendRow(item)
             
-        self.dreams_list.setModel(model)            
+        self.dreams_list.setModel(model)  
+        
+    def save_dream(self):
+        if self.current_id > -1 and self.dreams.check_id(self.current_id):
+            self.dreams.replace(self.current_id, self.text_title.text(), self.text_content.toPlainText(), self.text_date.text())
+        else:
+            self.current_id = self.dreams.add(self.text_title.text(), self.text_content.toPlainText(), self.text_date.text())
+        
+        self.update_list()
 
 app = QtGui.QApplication(sys.argv)
 main = Dreambook()
