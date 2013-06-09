@@ -132,6 +132,7 @@ class Dreambook(QtGui.QMainWindow):
         self.dreams_list = QtGui.QListView()
         self.dreams_list.setMaximumWidth(250)
         self.dreams_list.setMinimumWidth(100)
+        self.dreams_list.clicked.connect(self.list_clicked)
 
     def config_store(self):
         self.dreams = Dreams()
@@ -146,6 +147,15 @@ class Dreambook(QtGui.QMainWindow):
             
         self.dreams_list.setModel(model)  
         
+    def show_dream(self, index):
+        self.current_id = index
+        
+        self.text_title.setText(self.dreams.dreams[index]['title'])
+        self.text_content.setText(self.dreams.dreams[index]['content'])
+        self.text_date.setText(self.dreams.dreams[index]['date'])
+        
+    # Events
+    
     def save_dream(self):
         if self.current_id > -1 and self.dreams.check_id(self.current_id):
             self.dreams.replace(self.current_id, self.text_title.text(), self.text_content.toPlainText(), self.text_date.text())
@@ -153,7 +163,10 @@ class Dreambook(QtGui.QMainWindow):
             self.current_id = self.dreams.add(self.text_title.text(), self.text_content.toPlainText(), self.text_date.text())
         
         self.update_list()
-
+        
+    def list_clicked(self, index):
+        self.show_dream(index.row())
+        
 app = QtGui.QApplication(sys.argv)
 main = Dreambook()
 main.show()
