@@ -63,10 +63,14 @@ class Dreambook(QtGui.QMainWindow):
         self.current_id = -1
 
     def add_events(self):
+        self.connect(self.toolbar_new, QtCore.SIGNAL('triggered()'), self.new)
         self.connect(self.toolbar_exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
         self.connect(self.save_button, QtCore.SIGNAL('clicked()'), self.save_dream)
 
     def build_actions(self):
+        self.toolbar_new = QtGui.QAction(QtGui.QIcon('resources/add.png'), "&New", self)
+        self.toolbar_new.setShortcut('Ctrl+N')
+        
         self.toolbar_exit = QtGui.QAction(QtGui.QIcon('resources/exit.png'), "&Exit", self)
         self.toolbar_exit.setShortcut('Ctrl+Q')
 
@@ -88,6 +92,7 @@ class Dreambook(QtGui.QMainWindow):
         # ToolBar
         self.toolbar = self.addToolBar("Toolbar");
         self.toolbar.addSeparator()
+        self.toolbar.addAction(self.toolbar_new)
         self.toolbar.addAction(self.toolbar_exit)
 
         # Status Bar
@@ -155,6 +160,17 @@ class Dreambook(QtGui.QMainWindow):
         self.text_date.setText(self.dreams.dreams[index]['date'])
         
     # Events
+    
+    def new(self):
+        self.current_id = -1
+        
+        self.text_title.setText("")
+        self.text_content.setText("")
+        self.text_date.setText("")
+        
+        self.update_list()
+        
+        self.text_title.setFocus(True)
     
     def save_dream(self):
         if self.current_id > -1 and self.dreams.check_id(self.current_id):
