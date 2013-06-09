@@ -32,6 +32,9 @@ class Dreams():
         file = open(self.DATA_FILE, 'wb')
         pickle.dump(self.dreams, file)
         file.close()
+        
+    def add(self, title, content, date):
+        self.dreams.append({ 'id': len(self.dreams),'title': title, 'content': content, 'date': date})
 
 class Dreambook(QtGui.QMainWindow):
     
@@ -105,16 +108,22 @@ class Dreambook(QtGui.QMainWindow):
         self.setCentralWidget(widget)
 
     def build_list(self):
-        self.dreams_list_model = QtGui.QStandardItemModel(1, 2)
-
         self.dreams_list = QtGui.QListView()
         self.dreams_list.setMaximumWidth(250)
         self.dreams_list.setMinimumWidth(100)
 
-        self.dreams_list.setModel(self.dreams_list_model)
-
     def config_store(self):
         self.dreams = Dreams()
+        self.update_list()
+        
+    def update_list(self):
+        model = QtGui.QStandardItemModel(self.dreams_list)
+        
+        for dream in self.dreams.dreams:
+            item = QtGui.QStandardItem(dream['title'])
+            model.appendRow(item)
+            
+        self.dreams_list.setModel(model)            
 
 app = QtGui.QApplication(sys.argv)
 main = Dreambook()
