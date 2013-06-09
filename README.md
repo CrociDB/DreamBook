@@ -1,0 +1,1 @@
+Some people like to keep a journal of their dreams. That's the most simple app I could make to help that. And to learn Qt.
