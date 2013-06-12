@@ -9,50 +9,67 @@ class Dreams():
     DATA_FILE = 'dreams.db'
     
     def __init__(self):
+        self.dreams = []
+        
         if not self.load():
             self.create()
             self.save()
             
     def load(self):
         try:
-            file = open(self.DATA_FILE, 'rb')
+            data_file = open(self.DATA_FILE, 'rb')        
+            self.dreams = pickle.load(data_file)
+            data_file.close()
         except IOError:
             return False
         
-        self.dreams = pickle.load(file)
-        file.close()
-        
-        if self.dreams == None: return False
+        if self.dreams == None: 
+            return False
         return True
         
     def create(self):
         self.dreams = []        
         
     def save(self):
-        file = open(self.DATA_FILE, 'wb')
-        pickle.dump(self.dreams, file)
-        file.close()
+        data_file = open(self.DATA_FILE, 'wb')
+        pickle.dump(self.dreams, data_file)
+        data_file.close()
         
     def add(self, title, content, date):
-        id = len(self.dreams)
-        self.dreams.append({ 'id': id,'title': title, 'content': content, 'date': date})
-        self.save()
-        return id
+        did = len(self.dreams)
         
-    def replace(self, id, title, content, date):
-        self.dreams[id] = { 'id': id, 'title': title, 'content': content, 'date': date}
+        self.dreams.append({ 
+            'id': did,
+            'title': title, 
+            'content': content, 
+            'date': date
+        })
+        
+        self.save()
+        return did
+        
+    def replace(self, did, title, content, date):
+        self.dreams[did] = { 
+            'id': did, 
+            'title': title, 
+            'content': content, 
+            'date': date
+        }
+        
         self.save()
         
-    def delete(self, id):
-        self.dreams.pop(id)
+    def delete(self, did):
+        self.dreams.pop(did)
         self.save()
         
-    def check_id(self, id):
-        return True in map(lambda x: x['id'] == id, self.dreams)
+    def check_id(self, did):
+        return True in [x['id'] == did for x in self.dreams]
 
 class Dreambook(QtGui.QMainWindow):
     
     def __init__(self):
+        self.widgets = {}
+        
         # Init Qt
         QtGui.QMainWindow.__init__(self)
         self.build_actions()
@@ -68,47 +85,52 @@ class Dreambook(QtGui.QMainWindow):
         self.current_dream_changed = False
 
     def add_events(self):
-        self.connect(self.toolbar_new, QtCore.SIGNAL('triggered()'), self.new)
-        self.connect(self.toolbar_delete, QtCore.SIGNAL('triggered()'), self.delete)
-        self.connect(self.toolbar_exit, QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
-        self.connect(self.save_button, QtCore.SIGNAL('clicked()'), self.save_dream)
+        self.connect(self.widgets['toolbar_new'], 
+                     QtCore.SIGNAL('triggered()'), self.new)
+        self.connect(self.widgets['toolbar_delete'], 
+                     QtCore.SIGNAL('triggered()'), self.delete)
+        self.connect(self.widgets['toolbar_exit'], 
+                     QtCore.SIGNAL('triggered()'), QtCore.SLOT('close()'))
+        self.connect(self.widgets['save_button'], 
+                     QtCore.SIGNAL('clicked()'), self.save_dream)
         
-        self.connect(self.text_title, QtCore.SIGNAL("textEdited(QString)"), self.text_changed)
-        self.connect(self.text_content, QtCore.SIGNAL("textEdited(QString)"), self.text_changed)
-        self.connect(self.text_date, QtCore.SIGNAL("textEdited(QString)"), self.text_changed)
+        self.connect(self.widgets['text_title'], 
+                     QtCore.SIGNAL("textEdited(QString)"), self.text_changed)
+        self.connect(self.widgets['text_content'], 
+                     QtCore.SIGNAL("textEdited(QString)"), self.text_changed)
+        self.connect(self.widgets['text_date'], 
+                     QtCore.SIGNAL("textEdited(QString)"), self.text_changed)
 
     def build_actions(self):
-        self.toolbar_new = QtGui.QAction(QtGui.QIcon('resources/add.png'), "&New", self)
-        self.toolbar_new.setShortcut('Ctrl+N')
+        self.widgets['toolbar_new'] = QtGui.QAction(QtGui.QIcon('resources/add.png'), "&New", self)
+        self.widgets['toolbar_new'].setShortcut('Ctrl+N')
         
-        self.toolbar_delete = QtGui.QAction(QtGui.QIcon('resources/delete.png'), "&Remove", self)
-        self.toolbar_delete.setShortcut('Ctrl+D')
+        self.widgets['toolbar_delete'] = QtGui.QAction(QtGui.QIcon('resources/delete.png'), "&Remove", self)
+        self.widgets['toolbar_delete'].setShortcut('Ctrl+D')
         
-        self.toolbar_exit = QtGui.QAction(QtGui.QIcon('resources/exit.png'), "&Exit", self)
-        self.toolbar_exit.setShortcut('Ctrl+Q')
+        self.widgets['toolbar_exit'] = QtGui.QAction(QtGui.QIcon('resources/exit.png'), "&Exit", self)
+        self.widgets['toolbar_exit'].setShortcut('Ctrl+Q')
 
     def build_bars(self):
         self.resize(750, 500)
         self.setWindowTitle('DreamBook')
 
         # Menu Bar
-        self.menubar = self.menuBar()
+        self.widgets['menubar'] = self.menuBar()
 
         # Menu Dreams
-        self.menu_dreams = self.menubar.addMenu("&Dreams")
-
-        self.menu_dreams.addAction(self.toolbar_exit)
+        self.widgets['menu_dreams'] = self.widgets['menubar'].addMenu("&Dreams")
 
         # Menu Help
-        self.menu_help = self.menubar.addMenu("&Help")
+        self.widgets['menu_help'] = self.widgets['menubar'].addMenu("&Help")
 
         # ToolBar
-        self.toolbar = self.addToolBar("Toolbar");
-        self.toolbar.addSeparator()
-        self.toolbar.addAction(self.toolbar_new)
-        self.toolbar.addAction(self.toolbar_delete)
-        self.toolbar.addSeparator()
-        self.toolbar.addAction(self.toolbar_exit)
+        self.widgets['toolbar'] = self.addToolBar("Toolbar")
+        self.widgets['toolbar'].addSeparator()
+        self.widgets['toolbar'].addAction(self.widgets['toolbar_new'])
+        self.widgets['toolbar'].addAction(self.widgets['toolbar_delete'])
+        self.widgets['toolbar'].addSeparator()
+        self.widgets['toolbar'].addAction(self.widgets['toolbar_exit'])
 
         # Status Bar
         self.statusBar().showMessage("Ready")
@@ -127,45 +149,45 @@ class Dreambook(QtGui.QMainWindow):
 
         # Dreams list
         self.build_list()
-        grid.addWidget(self.dreams_list, 0, 0)
+        grid.addWidget(self.widgets['dreams_list'], 0, 0)
 
         # Dreams details
         left_grid.addWidget(QtGui.QLabel("Title"), 0, 0)
-        self.text_title = QtGui.QLineEdit()
-        left_grid.addWidget(self.text_title, 1, 0)
+        self.widgets['text_title'] = QtGui.QLineEdit()
+        left_grid.addWidget(self.widgets['text_title'], 1, 0)
 
         left_grid.addWidget(QtGui.QLabel("Dream"), 2, 0)
-        self.text_content = QtGui.QTextEdit()
-        left_grid.addWidget(self.text_content, 3, 0)
+        self.widgets['text_content'] = QtGui.QTextEdit()
+        left_grid.addWidget(self.widgets['text_content'], 3, 0)
 
         left_grid.addWidget(QtGui.QLabel("Date"), 4, 0)
-        self.text_date = QtGui.QLineEdit()
-        left_grid.addWidget(self.text_date, 5, 0)
+        self.widgets['text_date'] = QtGui.QLineEdit()
+        left_grid.addWidget(self.widgets['text_date'], 5, 0)
 
-        self.save_button = QtGui.QPushButton("Save")
-        left_grid.addWidget(self.save_button, 6, 0)
+        self.widgets['save_button'] = QtGui.QPushButton("Save")
+        left_grid.addWidget(self.widgets['save_button'], 6, 0)
 
         grid.addWidget(left, 0, 1)
         self.setCentralWidget(widget)
 
     def build_list(self):
-        self.dreams_list = QtGui.QListView()
-        self.dreams_list.setMaximumWidth(250)
-        self.dreams_list.setMinimumWidth(100)
-        self.dreams_list.clicked.connect(self.list_clicked)
+        self.widgets['dreams_list'] = QtGui.QListView()
+        self.widgets['dreams_list'].setMaximumWidth(250)
+        self.widgets['dreams_list'].setMinimumWidth(100)
+        self.widgets['dreams_list'].clicked.connect(self.list_clicked)
 
     def config_store(self):
         self.dreams = Dreams()
         self.update_list()
         
     def update_list(self):
-        model = QtGui.QStandardItemModel(self.dreams_list)
+        model = QtGui.QStandardItemModel(self.widgets['dreams_list'])
         
         for dream in self.dreams.dreams:
             item = QtGui.QStandardItem(dream['title'])
             model.appendRow(item)
             
-        self.dreams_list.setModel(model)  
+        self.widgets['dreams_list'].setModel(model)  
         
     def show_dream(self, index):
         if self.current_dream_changed:
@@ -175,9 +197,9 @@ class Dreambook(QtGui.QMainWindow):
         self.current_id = index
         self.current_dream_changed = False
         
-        self.text_title.setText(self.dreams.dreams[index]['title'])
-        self.text_content.setText(self.dreams.dreams[index]['content'])
-        self.text_date.setText(self.dreams.dreams[index]['date'])
+        self.widgets['text_title'].setText(self.dreams.dreams[index]['title'])
+        self.widgets['text_content'].setText(self.dreams.dreams[index]['content'])
+        self.widgets['text_date'].setText(self.dreams.dreams[index]['date'])
         
     def confirm_save(self):
         reply = QtGui.QMessageBox.question(
@@ -195,13 +217,13 @@ class Dreambook(QtGui.QMainWindow):
     def new(self):
         self.current_id = -1
         
-        self.text_title.setText("")
-        self.text_content.setText("")
-        self.text_date.setText("")
+        self.widgets['text_title'].setText("")
+        self.widgets['text_content'].setText("")
+        self.widgets['text_date'].setText("")
         
         self.update_list()
         
-        self.text_title.setFocus(True)
+        self.widgets['text_title'].setFocus(True)
         
     def delete(self):
         reply = QtGui.QMessageBox.question(
@@ -218,9 +240,16 @@ class Dreambook(QtGui.QMainWindow):
     
     def save_dream(self):
         if self.current_id > -1 and self.dreams.check_id(self.current_id):
-            self.dreams.replace(self.current_id, self.text_title.text(), self.text_content.toPlainText(), self.text_date.text())
+            self.dreams.replace(
+                self.current_id, 
+                self.widgets['text_title'].text(), 
+                self.widgets['text_content'].toPlainText(), 
+                self.widgets['text_date'].text())
         else:
-            self.current_id = self.dreams.add(self.text_title.text(), self.text_content.toPlainText(), self.text_date.text())
+            self.current_id = self.dreams.add(
+                                    self.widgets['text_title'].text(), 
+                                    self.widgets['text_content'].toPlainText(), 
+                                    self.widgets['text_date'].text())
         
         self.update_list()
         self.current_dream_changed = False
@@ -228,10 +257,11 @@ class Dreambook(QtGui.QMainWindow):
     def list_clicked(self, index):
         self.show_dream(index.row())
     
-    def text_changed(self, text):
+    def text_changed(self):
         self.current_dream_changed = True
         
-app = QtGui.QApplication(sys.argv)
-main = Dreambook()
-main.show()
-sys.exit(app.exec_())
+if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    main = Dreambook()
+    main.show()
+    sys.exit(app.exec_())
